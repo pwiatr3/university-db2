@@ -4,14 +4,17 @@ Person::Person()
     :   name_(""),
         surname_(""),
         address_(""),
-        gender_("unknown") {
+        pesel_{"0000000000"},
+        gender_("unknown"),
+        position_("unkown") {
 }
-
-Person::Person(std::string name, std::string surname, std::string address, std::string gender)
+Person::Person(std::string name, std::string surname, std::string address, std::string pesel, std::string gender, std::string position)
     :   name_(name),
         surname_(surname),
         address_(address),
-        gender_(gender) {
+        pesel_(pesel),
+        gender_(gender),
+        position_(position) {
 }
 
 void Person::setName(const std::string& name) {
@@ -23,9 +26,14 @@ void Person::setSurname(const std::string& surname) {
 void Person::setAddress(const std::string& address) {
     address_ = address;
 }
-
+void Person::setPesel(const std::string pesel) {
+    pesel_ = pesel;
+}
 void Person::setGender(std::string gender) {
     gender_ = gender;
+}
+void Person::setPosition(const std::string& position) {
+    position_ = position;
 }
 
 std::string Person::getName() const {
@@ -40,15 +48,23 @@ std::string Person::getFullName() const {
 std::string Person::getAddress() const {
     return address_;
 }
+std::string Person::getPesel() const {
+    return pesel_;
+}
 std::string Person::getGender() const {
     return gender_;
 }
+std::string Person::getPosition() const {
+    return position_;
+}
+
 void Person::print() {
     std::cout << "================"<< '\n';
-    std::cout << name_ << '\n';
-    std::cout << surname_ << '\n';;
-    std::cout << address_ << '\n';;
-    std::cout << gender_ << '\n';;
+    std::cout << "Name: " << name_ << '\n';
+    std::cout << "Surname: " << surname_ << '\n';
+    std::cout << "Address: " << address_ << '\n';
+    std::cout << "Pesel: " << pesel_ << '\n';
+    std::cout << "Gender: " << gender_ << '\n';
 }
 
 bool Person::operator==(const  Person &rhs) const {
@@ -56,6 +72,9 @@ bool Person::operator==(const  Person &rhs) const {
         return false;
     }
     if(this->getAddress() != rhs.getAddress()) {
+        return false;
+    }
+    if(this->getPesel() != rhs.getPesel()) {
         return false;
     }
     if(this->getGender() != rhs.getGender()) {

@@ -1,199 +1,129 @@
-// #include <catch2/catch_test_macros.hpp>
-// #include "db.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "db.hpp"
+#include "employee.hpp"
+#include "generator.hpp"
 
-// SCENARIO("Testing addStudent function in db") {
+SCENARIO("Testing addPerson function in db") {
 
-//     GIVEN("Empty database db and Student st1 = { Pawel, Wiatr, Namyslowska 8, 12345, 85052006075, Male }") {
-//         Db db {};
-//         Student st1 {"Pawel", "Wiatr", "Namyslowska 8", 12345, 85052006075, "Male"};
+    GIVEN("Empty database db, pointer to Student and pointer to Employee") {
+        Db db {};
+        std::shared_ptr<Person> studentPtr = std::make_shared<Student>("Pawel", "Wiatr", "Namyslowska 8", 12345, "85052006075", "Male");
+        std::shared_ptr<Person> employeePtr = std::make_shared<Employee>("Anna", "Aleksandrowska", "Dereniowa 6 Katowice", "77040612348", 100000, "Female");
+
+        WHEN("addPerson(studentPtr) ") {
+            db.addPerson(std::make_shared<Student>("Pawel", "Wiatr", "Namyslowska 8", 12345, "85052006075", "Male"));
+            db.addPerson(std::make_shared<Employee>("Anna", "Aleksandrowska", "Dereniowa 6 Katowice", "77040612348", 100000, "Female"));
+            
+            THEN("First element in database is student, second is employee") {
+                REQUIRE( db.getFullList().size() == 2);
+                REQUIRE( *studentPtr == *db.getFullList().at(0));
+                REQUIRE( *employeePtr == *db.getFullList().at(1));
+            }
+        }
+    }
+}
+
+ SCENARIO("Testing sortBySalary() function in database") {
+
+    GIVEN("Adding to an empty database 4 employees with Salaries: 3000, 4000, 1000, 2000") {
+        Db db {};
         
-//         WHEN("addStudent(st1) is called") {
-//             db.addStudent(st1);
+        db.addPerson(std::make_shared<Employee>("", "", "", "00000000000", 3000, ""));
+        db.addPerson(std::make_shared<Employee>("", "", "", "00000000000", 4000, ""));
+        db.addPerson(std::make_shared<Employee>("", "", "", "00000000000", 1000, ""));
+        db.addPerson(std::make_shared<Employee>("", "", "", "00000000000", 2000, ""));
+                
+        WHEN("sort by PESEL is called") {
+            db.sortBySalary();
+            THEN("First salary in sorted database is 1000") {
+                REQUIRE(db.getFullList().at(0)->getSalary() == 1000);
+            }
+            THEN("Second salary in sorted database is 2000") {
+                REQUIRE(db.getFullList().at(1)->getSalary() == 2000);
+            }
+            THEN("Third salary in sorted database is 3000") {
+                REQUIRE(db.getFullList().at(2)->getSalary() == 3000);
+            }
+            THEN("Fourth salary in sorted database is 4000") {
+                REQUIRE(db.getFullList().at(3)->getSalary() == 4000);
+            }
+                            
+        }
+    }   
+}
 
-//             THEN("First element in database is st1") {
-//                 REQUIRE( db.getFullList().size() == 1);
-//                 REQUIRE( st1 == db.getFullList().at(0));
-//             }
-//         }
-//     }
+SCENARIO("Testing generator object") {
+
+    GIVEN("Generator object gen") {
+        Db db {};
+        Generator gen {};
+        WHEN("gen.generateStudent() is called ") {
+            std::shared_ptr<Student> studentPtr = gen.generateStudent();
+            
+            THEN("All student's fields are not empty, pesel number is valid") {
+                REQUIRE(studentPtr->getName() !=  "");
+                REQUIRE(studentPtr->getSurname() !=  "");
+                REQUIRE(studentPtr->getAddress() !=  "");
+                REQUIRE(studentPtr->getIndex() >= 0);
+                REQUIRE(studentPtr->getIndex() <= maxIndex);
+                REQUIRE(db.peselValidation(studentPtr->getPesel()) == true);
+                REQUIRE(studentPtr->getGender() != "");
+            }
+        }        
+    }
+    GIVEN("Generator object gen") {
+        Db db {};
+        Generator gen {};
+        WHEN("gen.generateEmployee() is called ") {
+            std::shared_ptr<Employee> employeePtr = gen.generateEmployee();
+            
+            THEN("All employee fields are not empty, pesel number is valid") {
+                REQUIRE(employeePtr->getName() !=  "");
+                REQUIRE(employeePtr->getSurname() !=  "");
+                REQUIRE(employeePtr->getAddress() !=  "");
+                REQUIRE(db.peselValidation(employeePtr->getPesel()) == true);
+                REQUIRE(employeePtr->getSalary() >= 0);
+                REQUIRE(employeePtr->getSalary() <= maxSalary);
+                REQUIRE(employeePtr->getGender() != "");
+            }
+        }        
+    }
+}
+
+SCENARIO("Testing modifySalary(size_t pesel, size_t newSalary) function in db") {
     
-// }
+    GIVEN("2 employees with salaries 200000, 10000 respectively and 1 student with salary 0 are added to empty db") {
+        Db db {};
+        db.addPerson(std::make_shared<Student>("Pawel", "Wiatr", "Namyslowska 8", 12345, "85052006075", "Male"));
+        db.addPerson(std::make_shared<Employee>("Anna", "Aleksandrowska", "Dereniowa 6 Katowice", "77040612348", 200000, "Female"));
+        db.addPerson(std::make_shared<Employee>("Stefan", "Żeromski", "Pejzażowa 8 Gdynia", "47070856498", 10000, "Male"));
 
-// SCENARIO("Testing readDbFromFile() function in database") {
+        WHEN("sortBySalary() is called") {
+            db.modifySalary("77040612348", 1000000);
+            
+            THEN("Person with PESEL 77040612348 salary is changed to 1000000") {
+                REQUIRE(db.searchByPesel("77040612348")->getSalary() == 1000000);
+            }
+        }
+    }
+}
 
-//     GIVEN("Empty database db") {
-//         Db db {};
-//         Student first {"Adam", "Milczarek", "Prosta 1 Warszawa", 1234, 63042251892, "Male"};
-//         Student middle {"Anna", "Aleksandrowska", "Dereniowa 6 Katowice", 5245, 77040612348, "Female"};
-//         Student last {"Anna", "Maliszkiewicz", "Wrzeciono 9 Rybnik", 974, 84050293344, "Female"};
-        
-        
-//         WHEN("readDbFromFile(student_db.txt) is called") {
-//             db.readDbFromFile("student_db.txt");
+SCENARIO("Testing sortBySalary() function in db") {
+    
+    GIVEN("2 employees with salaries 200000, 10000 respectively and 1 student with salary 0 are added to empty db") {
+        Db db {};
+        db.addPerson(std::make_shared<Student>("Pawel", "Wiatr", "Namyslowska 8", 12345, "85052006075", "Male"));
+        db.addPerson(std::make_shared<Employee>("Anna", "Aleksandrowska", "Dereniowa 6 Katowice", "77040612348", 200000, "Female"));
+        db.addPerson(std::make_shared<Employee>("Stefan", "Żeromski", "Pejzażowa 8 Gdynia", "47070856498", 10000, "Male"));
 
-//             THEN("Size of database is 10") {
-                
-//                 REQUIRE( db.getFullList().size() == 10);
-//             }
-//             THEN("First student in database is Adam Milczarek") {
-//                 REQUIRE( first == db.getFullList().at(0));
-//             }
-//             THEN("Student in the middle of database is Anna Aleksandrowska") {
-//                 REQUIRE( middle == db.getFullList().at(4));
-//             }
-//             THEN("Last student in the database is Anna Maliszkiewicz") {
-//                 REQUIRE( last == db.getFullList().at(9));
-//             }
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing searchBySurname() function in database") {
-
-//     GIVEN("Database loaded from file student_db.txt") {
-//         Db db {};
-//         db.readDbFromFile("student_db.txt");
-//         Student st {"Anna", "Aleksandrowska", "Dereniowa 6 Katowice", 5245, 77040612348, "Female"};
-                
-//         WHEN("searchBySurname(Aleksandrowska) is called") {
-//             Student st1 = db.searchBySurname("Aleksandrowska");
-
-//             THEN("Student's surname, returned by the function is Aleksandrowska") {
-//                 REQUIRE(  st1.getSurname() == "Aleksandrowska");
-//             }
-//         }
-//         WHEN("searchBySurname(aleksandrowska) is called") {
-//             Student st1 = db.searchBySurname("aleksandrowska");
-
-//             THEN("Student's surname, returned by the function is Aleksandrowska") {
-//                 REQUIRE(  st1.getSurname() == "Aleksandrowska");
-//             }
-//         }
-//         WHEN("searchBySurname(Mickiewicz) is called") {
-//             Student st1 = db.searchBySurname("Mickiewicz");
-
-//             THEN("Function returns empty Student object with empty surname") {
-//                 REQUIRE(  st1.getSurname() == "");
-//             }
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing searchByPesel() function in database") {
-
-//     GIVEN("database loaded from file student_db.txt") {
-//         Db db {};
-//         db.readDbFromFile("student_db.txt");
-                
-//         WHEN("search for PESEL = 46010786794") {
-//             Student st1 = db.searchByPesel(46010786794);
-
-//             THEN("Student's PESEL, returned by the function is 46010786794") {
-//                 REQUIRE(  st1.getPesel() == 46010786794);
-//             }
-//         }
-//         WHEN("search for PESEL = 12341234123") {
-//             Student st1 = db.searchByPesel(12341234123);
-
-//             THEN("Student's PESEL, returned by the function is 0") {
-//                 REQUIRE(st1.getPesel() == 0);
-//             }
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing sortByPesel() function in database") {
-
-//     GIVEN("Adding to an empty database 3 student with PESEL numbers: 63042251892, 53050439434, 86072049352") {
-//         Db db {};
-//         Student st1 {"", "", "", 0, 63042251892, ""};
-//         Student st2 {"", "", "", 0, 53050439434, ""};
-//         Student st3 {"", "", "", 0, 86072049352, ""};
-
-//         db.addStudent(st1);
-//         db.addStudent(st2);
-//         db.addStudent(st3);
-                
-//         WHEN("sort by PESEL is called") {
-//             db.sortByPesel();
-//             THEN("First PESEL in sorted database is 86072049352") {
-//                 REQUIRE(db.getFullList().at(0).getPesel() == 86072049352);
-//             }
-//             THEN("Last PESEL in sorted database is 53050439434") {
-//                 REQUIRE(db.getFullList().at(2).getPesel() == 53050439434);
-//             }
-                            
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing sortBySurname() function in database") {
-
-//     GIVEN("Adding to an empty database 3 student with surname: Zelent, Andrzejczak, Kozłowska") {
-//         Db db {};
-//         Student st1 {"", "Zelent", "", 0, 0, ""};
-//         Student st2 {"", "Andrzejczak", "", 0, 0, ""};
-//         Student st3 {"", "Kozłowska", "", 0, 0, ""};
-
-//         db.addStudent(st1);
-//         db.addStudent(st2);
-//         db.addStudent(st3);
-                
-//         WHEN("sort by surname is called") {
-//             db.sortBySurname();
-//             THEN("First surname in sorted database is Andrzejczak") {
-//                 REQUIRE(db.getFullList().at(0).getSurname() == "Andrzejczak");
-//             }
-//             THEN("Last surname in sorted database is Zelent") {
-//                 REQUIRE(db.getFullList().at(2).getSurname() == "Zelent");
-//             }
-                            
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing deleteRecord() function in database") {
-
-//     GIVEN("Adding to an empty database 3 students") {
-//         Db db {};
-//         Student st1 {"Adam", "Milczarek", "Prosta 1 Warszawa", 1234, 63042251892, "Male"};
-//         Student st2 {"Anna", "Aleksandrowska", "Dereniowa 6 Katowice", 5245, 77040612348, "Female"};
-//         Student st3 {"Anna", "Maliszkiewicz", "Wrzeciono 9 Rybnik", 974, 84050293344, "Female"};
-
-//         db.addStudent(st1);
-//         db.addStudent(st2);
-//         db.addStudent(st3);
-                
-//         WHEN("deleteRecord(5245) is called") {
-//             db.deleteRecord(5245);
-//             THEN("Size of databse is reduced to 2") {
-//                 REQUIRE(db.getFullList().size() == 2);
-//             }                           
-//         }
-//     }   
-// }
-
-// SCENARIO("Testing peselValidation() function") {
-//     Db db {};
-//         WHEN("when correct pesel 98010233714 is passed") {
-//             THEN("peselValidation is true") {
-//                 REQUIRE(db.peselValidation(98010233714) == true);
-//             }                           
-//         }
-//         WHEN("when correct pesel 97062537166 is passed") {
-//             THEN("peselValidation is true") {
-//                 REQUIRE(db.peselValidation(97062537166) == true);
-//             }                           
-//         }
-//         WHEN("when incorrect pesel 123 is passed") {
-//             THEN("peselValidation is false") {
-//                 REQUIRE(db.peselValidation(123) == false);
-//             }                           
-//         }
-//         WHEN("when incorrect pesel 12121212121 is passed") {
-//             THEN("peselValidation is false") {
-//                 REQUIRE(db.peselValidation(12121212121) == false);
-//             }                           
-//         } 
-// }
-
+        WHEN("sortBySalary() is called") {
+            db.sortBySalary();
+            
+            THEN("First person is student with salary 0, then person with salary 10000 and last with person with 200000") {
+                REQUIRE( db.getFullList().at(0)->getSalary() == 0);
+                REQUIRE( db.getFullList().at(1)->getSalary() == 10000);
+                REQUIRE( db.getFullList().at(2)->getSalary() == 200000);
+            }
+        }
+    }
+}
